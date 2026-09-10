@@ -18,8 +18,10 @@ const ticketSchema = new mongoose.Schema(
     },
     quoi: {
       type: String,
-      required: true,
+      required: false,
+      default: null,
       trim: true,
+      set: (value) => (value === '' ? null : value),
     },
     combien: {
       type: Number,

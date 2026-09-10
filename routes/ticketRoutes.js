@@ -15,7 +15,8 @@ router.get('/', async (req, res) => {
 
 // POST create a new ticket
 router.post('/', async (req, res) => {
-  const { dateInput, dateOutput, qui, quoi, combien, lanaGarde } = req.body;
+  const { dateInput, dateOutput, qui, combien, lanaGarde } = req.body;
+  const quoi = req.body.quoi === '' ? null : req.body.quoi;
 
   try {
     const newTicket = new Ticket({
@@ -37,9 +38,15 @@ router.post('/', async (req, res) => {
 // PUT update a ticket by ID (e.g., adding dateOutput or updating lanaGarde)
 router.put('/:id', async (req, res) => {
   try {
+    const updateData = { ...req.body };
+
+    if (updateData.quoi === '') {
+      updateData.quoi = null;
+    }
+
     const updatedTicket = await Ticket.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     );
     if (!updatedTicket) {
