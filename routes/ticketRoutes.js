@@ -71,7 +71,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-router.post('/api/tickets/check-and-update', async (req, res) => {
+router.post('/check-and-update', async (req, res) => {
   try {
     const { ticketId, quoi, combien } = req.body;
 
@@ -88,7 +88,6 @@ router.post('/api/tickets/check-and-update', async (req, res) => {
     };
 
     const activeTickets = await Ticket.find(query);
-
     const available = activeTickets.reduce((sum, t) => sum + (t.combien || 0), 0);
 
     if (available < combien) {
