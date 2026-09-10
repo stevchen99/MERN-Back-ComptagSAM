@@ -71,4 +71,53 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+router.post('/api/tickets/check-and-update', async (req, res) => {
+  try {
+    const { ticketId, quoi, combien } = req.body;
+
+    if (!quoi || !Number.isInteger(combien) || combien < 1) {
+      return res.status(400).json({
+        ok: false,
+        message: 'quoi and combien are required'
+      });
+    }
+
+    const query = {
+      dateOutput: null,
+      lanaGarde: false
+    };
+
+    const activeTickets = await Ticket.find(query);
+
+    const available = activeTickets.reduce((sum, t) => sum + (t.combien || 0), 0);
+
+    if (available < combien) {
+      return res.status(409).json({
+        ok: false,
+        message: 'Not enough available stock',
+        available,
+        requested: combien
+      });
+    }
+
+    await Ticket.findByIdAndUpdate(ticketId, {
+      quoi,
+      combien
+    });
+
+    return res.status(200).json({
+      ok: true,
+      message: 'Update successful',
+      available,
+      requested: combien
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
 export default router;
