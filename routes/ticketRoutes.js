@@ -98,37 +98,29 @@ router.post('/check-and-update', async (req, res) => {
       });
     }
 
-    let remainingNeeded = combien;
+    const firstTicket = activeTickets[0];
 
-    for (const ticket of activeTickets) {
-      if (remainingNeeded <= 0) {
-        await Ticket.findByIdAndDelete(ticket._id);
-        continue;
-      }
+    if (!firstTicket) {
+      return res.status(404).json({
+        ok: false,
+        message: 'No active ticket available'
+      });
+    }
 
-      const usedFromThisTicket = Math.min(ticket.combien, remainingNeeded);
+    await Ticket.findByIdAndUpdate(firstTicket._id, {
+      dateOutput: new Date(),
+      quoi,
+      combien
+    });
 
-      if (usedFromThisTicket >= ticket.combien) {
-        await Ticket.findByIdAndUpdate(ticket._id, {
-          dateOutput: new Date(),
-          quoi,
-          combien: ticket.combien
-        });
-        remainingNeeded -= ticket.combien;
-      } else {
-        const newRemaining = ticket.combien - usedFromThisTicket;
-
-        await Ticket.findByIdAndUpdate(ticket._id, {
-          combien: newRemaining
-        });
-
-        remainingNeeded = 0;
-      }
+    for (const ticket of activeTickets.slice(1)) {
+      await Ticket.findByIdAndDelete(ticket._id);
     }
 
     return res.status(200).json({
       ok: true,
       message: 'Checkout successful',
+      updatedTicketId: firstTicket._id,
       requested: combien
     });
   } catch (error) {
