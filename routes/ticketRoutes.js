@@ -98,40 +98,42 @@ router.post('/check-and-update', async (req, res) => {
       });
     }
 
-    if (!activeTickets.length) {
+    const firstTicket = activeTickets[0];
+
+    if (!firstTicket) {
       return res.status(404).json({
         ok: false,
         message: 'No active ticket available'
       });
     }
 
-    let remainingToConsume = combien;
+    if (combien === available) {
+      await Ticket.findByIdAndUpdate(firstTicket._id, {
+        dateOutput: new Date(),
+        quoi,
+        combien
+      });
 
-    for (const ticket of activeTickets) {
-      if (remainingToConsume <= 0) break;
-
-      const quantityToConsumeFromThis = Math.min(ticket.combien, remainingToConsume);
-      const newQuantity = ticket.combien - quantityToConsumeFromThis;
-
-      if (newQuantity <= 0) {
+      for (const ticket of activeTickets.slice(1)) {
         await Ticket.findByIdAndDelete(ticket._id);
-      } else {
-        await Ticket.findByIdAndUpdate(ticket._id, {
-          combien: newQuantity,
-        });
       }
 
-      remainingToConsume -= quantityToConsumeFromThis;
+      return res.status(200).json({
+        ok: true,
+        message: 'Checkout successful'
+      });
     }
 
-    const remainingStock = available - combien;
+    // if requested is smaller than total available:
+    await Ticket.findByIdAndUpdate(firstTicket._id, {
+      dateOutput: new Date(),
+      quoi,
+      combien
+    });
 
     return res.status(200).json({
       ok: true,
-      message: 'Checkout successful',
-      requested: combien,
-      remainingStock,
-      consumed: combien
+      message: 'Checkout successful'
     });
   } catch (error) {
     return res.status(500).json({
