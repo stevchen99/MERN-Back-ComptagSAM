@@ -109,9 +109,7 @@ router.post('/check-and-update', async (req, res) => {
 
       return res.status(200).json({
         ok: true,
-        message: 'Checkout successful',
-        available,
-        requested: combien
+        message: 'Checkout successful'
       });
     }
 
@@ -127,9 +125,7 @@ router.post('/check-and-update', async (req, res) => {
 
     return res.status(200).json({
       ok: true,
-      message: 'Checkout successful',
-      available,
-      requested: combien
+      message: 'Checkout successful'
     });
   } catch (error) {
     return res.status(500).json({
