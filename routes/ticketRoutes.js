@@ -35,7 +35,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT update a ticket by ID (e.g., adding dateOutput or updating lanaGarde)
+// PUT update a ticket by ID
 router.put('/:id', async (req, res) => {
   try {
     const updateData = { ...req.body };
@@ -49,9 +49,11 @@ router.put('/:id', async (req, res) => {
       updateData,
       { new: true, runValidators: true }
     );
+
     if (!updatedTicket) {
       return res.status(404).json({ message: 'Ticket not found' });
     }
+
     res.status(200).json(updatedTicket);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -62,15 +64,18 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const deletedTicket = await Ticket.findByIdAndDelete(req.params.id);
+
     if (!deletedTicket) {
       return res.status(404).json({ message: 'Ticket not found' });
     }
+
     res.status(200).json({ message: 'Ticket deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
+// CHECKOUT / VALIDATE STOCK
 router.post('/check-and-update', async (req, res) => {
   try {
     const { ticketId, quoi, combien } = req.body;
@@ -109,7 +114,9 @@ router.post('/check-and-update', async (req, res) => {
 
       return res.status(200).json({
         ok: true,
-        message: 'Checkout successful'
+        message: 'Checkout successful',
+        available,
+        requested: combien
       });
     }
 
@@ -125,7 +132,9 @@ router.post('/check-and-update', async (req, res) => {
 
     return res.status(200).json({
       ok: true,
-      message: 'Checkout successful'
+      message: 'Checkout successful',
+      available,
+      requested: combien
     });
   } catch (error) {
     return res.status(500).json({
