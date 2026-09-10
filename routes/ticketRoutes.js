@@ -82,12 +82,11 @@ router.post('/check-and-update', async (req, res) => {
       });
     }
 
-    const query = {
+    const activeTickets = await Ticket.find({
       dateOutput: null,
       lanaGarde: false
-    };
+    });
 
-    const activeTickets = await Ticket.find(query);
     const available = activeTickets.reduce((sum, t) => sum + (t.combien || 0), 0);
 
     if (available < combien) {
@@ -113,8 +112,7 @@ router.post('/check-and-update', async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       ok: false,
-      message: 'Server error',
-      error: error.message
+      message: error.message
     });
   }
 });
