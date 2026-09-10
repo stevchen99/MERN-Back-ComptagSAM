@@ -85,7 +85,7 @@ router.post('/check-and-update', async (req, res) => {
     const activeTickets = await Ticket.find({
       dateOutput: null,
       lanaGarde: false
-    });
+    }).sort({ dateInput: 1 });
 
     const available = activeTickets.reduce((sum, t) => sum + (t.combien || 0), 0);
 
@@ -98,15 +98,37 @@ router.post('/check-and-update', async (req, res) => {
       });
     }
 
-    await Ticket.findByIdAndUpdate(ticketId, {
-      quoi,
-      combien
-    });
+    let remainingNeeded = combien;
+
+    for (const ticket of activeTickets) {
+      if (remainingNeeded <= 0) {
+        await Ticket.findByIdAndDelete(ticket._id);
+        continue;
+      }
+
+      const usedFromThisTicket = Math.min(ticket.combien, remainingNeeded);
+
+      if (usedFromThisTicket >= ticket.combien) {
+        await Ticket.findByIdAndUpdate(ticket._id, {
+          dateOutput: new Date(),
+          quoi,
+          combien: ticket.combien
+        });
+        remainingNeeded -= ticket.combien;
+      } else {
+        const newRemaining = ticket.combien - usedFromThisTicket;
+
+        await Ticket.findByIdAndUpdate(ticket._id, {
+          combien: newRemaining
+        });
+
+        remainingNeeded = 0;
+      }
+    }
 
     return res.status(200).json({
       ok: true,
-      message: 'Update successful',
-      available,
+      message: 'Checkout successful',
       requested: combien
     });
   } catch (error) {
