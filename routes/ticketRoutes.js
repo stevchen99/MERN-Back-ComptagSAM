@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Ticket from '../models/Ticket.js';
 
 const router = express.Router();
@@ -8,68 +9,6 @@ router.get('/', async (req, res) => {
   try {
     const tickets = await Ticket.find().sort({ createdAt: -1 });
     res.status(200).json(tickets);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// POST create a new ticket
-router.post('/', async (req, res) => {
-  const { dateInput, dateOutput, qui, combien, lanaGarde } = req.body;
-  const quoi = req.body.quoi === '' ? null : req.body.quoi;
-
-  try {
-    const newTicket = new Ticket({
-      dateInput,
-      dateOutput,
-      qui,
-      quoi,
-      combien,
-      lanaGarde,
-    });
-
-    const savedTicket = await newTicket.save();
-    res.status(201).json(savedTicket);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// PUT update a ticket by ID
-router.put('/:id', async (req, res) => {
-  try {
-    const updateData = { ...req.body };
-
-    if (updateData.quoi === '') {
-      updateData.quoi = null;
-    }
-
-    const updatedTicket = await Ticket.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedTicket) {
-      return res.status(404).json({ message: 'Ticket not found' });
-    }
-
-    res.status(200).json(updatedTicket);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// DELETE a ticket
-router.delete('/:id', async (req, res) => {
-  try {
-    const deletedTicket = await Ticket.findByIdAndDelete(req.params.id);
-
-    if (!deletedTicket) {
-      return res.status(404).json({ message: 'Ticket not found' });
-    }
-
-    res.status(200).json({ message: 'Ticket deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -103,23 +42,6 @@ router.post('/check-and-update', async (req, res) => {
       });
     }
 
-    if (available === combien) {
-      for (const ticket of activeTickets) {
-        await Ticket.findByIdAndUpdate(ticket._id, {
-          dateOutput: new Date(),
-          quoi,
-          combien: ticket.combien
-        });
-      }
-
-      return res.status(200).json({
-        ok: true,
-        message: 'Checkout successful',
-        available,
-        requested: combien
-      });
-    }
-
     const ticketsToUse = activeTickets.slice(0, combien);
 
     for (const ticket of ticketsToUse) {
@@ -141,6 +63,76 @@ router.post('/check-and-update', async (req, res) => {
       ok: false,
       message: error.message
     });
+  }
+});
+
+// POST create a new ticket
+router.post('/', async (req, res) => {
+  const { dateInput, dateOutput, qui, combien, lanaGarde } = req.body;
+  const quoi = req.body.quoi === '' ? null : req.body.quoi;
+
+  try {
+    const newTicket = new Ticket({
+      dateInput,
+      dateOutput,
+      qui,
+      quoi,
+      combien,
+      lanaGarde,
+    });
+
+    const savedTicket = await newTicket.save();
+    res.status(201).json(savedTicket);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// PUT update a ticket by ID
+router.put('/:id', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid Ticket ID format' });
+    }
+
+    const updateData = { ...req.body };
+
+    if (updateData.quoi === '') {
+      updateData.quoi = null;
+    }
+
+    const updatedTicket = await Ticket.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedTicket) {
+      return res.status(404).json({ message: 'Ticket not found' });
+    }
+
+    res.status(200).json(updatedTicket);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// DELETE a ticket
+router.delete('/:id', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid Ticket ID format' });
+    }
+
+    const deletedTicket = await Ticket.findByIdAndDelete(req.params.id);
+
+    if (!deletedTicket) {
+      return res.status(404).json({ message: 'Ticket not found' });
+    }
+
+    res.status(200).json({ message: 'Ticket deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
