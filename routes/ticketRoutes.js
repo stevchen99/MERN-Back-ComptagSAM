@@ -66,10 +66,10 @@ router.post('/check-and-update', async (req, res) => {
   }
 });
 
-// POST create a new ticket
+// POST create a new ticket (quoi is optional, defaults to null)
 router.post('/', async (req, res) => {
   const { dateInput, dateOutput, qui, combien, lanaGarde } = req.body;
-  const quoi = req.body.quoi === '' ? null : req.body.quoi;
+  const quoi = req.body.quoi && req.body.quoi.trim() !== '' ? req.body.quoi.trim() : null;
 
   try {
     const newTicket = new Ticket({
